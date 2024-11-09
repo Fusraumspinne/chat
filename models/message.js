@@ -2,7 +2,7 @@ import mongoose, { Schema, models } from "mongoose";
 
 const messageSchema = new Schema(
     {
-        end: {
+        send: {
             type: String,
             required: true,
         },

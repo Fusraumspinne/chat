@@ -4,7 +4,7 @@ import Button from '@/components/ui/Button'
 import React, { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
-import { Logout, Settings, MarkEmailUnreadOutlined, Send } from "@mui/icons-material"
+import { Logout, Settings, MarkEmailUnreadOutlined, Send, Check, DoneAll } from "@mui/icons-material"
 import InputField from './ui/InputField'
 import Image from 'next/image'
 
@@ -13,6 +13,12 @@ function Dashboard() {
 
   const [users, setUsers] = useState([])
   const [user, setUser] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [send, setSend] = useState()
+  const [recieve, setRecieve] = useState()
+  const [message, setMessage] = useState()
+  const [time, setTime] = useState()
+  const [gelesen, setGelesen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
@@ -24,6 +30,9 @@ function Dashboard() {
   }, [])
 
   useEffect(() => {
+    setSend(session?.user?.email)
+    if (user) setRecieve(user.email)
+
     fetchUsers();
   }, []);
 
@@ -54,6 +63,85 @@ function Dashboard() {
     );
   };
 
+  const fetchMessages = async () => {
+    if (!user) return;
+
+    try {
+      const resGetMessages = await fetch("/api/getMessages", {
+        method: "POST",
+        body: JSON.stringify({
+          senderEmail: session?.user?.email,
+          receiverEmail: user.email,
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (resGetMessages.ok) {
+        const data = await resGetMessages.json()
+        setMessages(data.messages)
+        console.log(data.messages)
+      } else {
+        console.error("Error occurred while fetching messages:", resGetMessages.statusText)
+      }
+    } catch (error) {
+      console.error("Error occurred while fetching messages:", error)
+    }
+  }
+
+  useEffect(() => {
+    const currentTimeInGermany = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
+    setTime(currentTimeInGermany);
+
+    setSend(session?.user?.email)
+    if (user) setRecieve(user.email)
+  }, [message]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!send || !recieve || !message || !time) {
+      console.log("All Inputs are requird.")
+      return
+    }
+
+    try {
+      const resSendMessage = await fetch("/api/sendMessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          send,
+          recieve,
+          message,
+          time,
+          gelesen
+        })
+      })
+
+      if (resSendMessage.ok) {
+        console.log("Message Send")
+      } else {
+        console.log("Sending Message failed")
+      }
+    } catch (error) {
+      console.log("Error during sending Message: ", error)
+    }
+
+    fetchMessages()
+    setMessage("")
+  }
+
+  const selectUser = (newUser) => {
+    setMessages([])
+    setUser(newUser)
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchMessages(); 
+    }
+  }, [user]);
+
   return (
     <div className='d-flex flex-column vh-100 bg-primary'>
       <div className='top_bar text_white d-flex align-items-center ms-2 fs-3 fw-semibold'>
@@ -69,12 +157,12 @@ function Dashboard() {
             <div className='bg-light h_100 w_100' style={{ borderRadius: "0.375rem 0.375rem 0 0" }}>
               <InputField classname={"w_100 mb-2 border_o"} placeholder={"Type Name here..."} onchange={(e) => setSearchTerm(e.target.value)} type={"text"} />
 
-              {users.filter(filterUsers).map((user, index) => {
+              {users.filter(filterUsers).map((user) => {
                 if (user.email === session?.user?.email) {
                   return null;
                 }
                 return (
-                  <div key={user._id} onClick={() => setUser(user)}>
+                  <div key={user._id} onClick={() => selectUser(user)}>
                     <div className="d-flex align-items-center justify-content-between">
                       <div className="d-flex">
                         <Image className="profile_image mx-3" src={user.profileImage} alt="icon" width={40} height={40} />
@@ -108,19 +196,52 @@ function Dashboard() {
           <div className="flex-grow-1">
             {user ? (
               <div>
-
+                {messages.map((message) => (
+                  <div key={message._id} className='my-1 mx-3'>
+                    {message.send === session?.user?.email ? (
+                      <div className="row px-3">
+                        <div className="col-4"></div>
+                        <div className="outgoing_message col-8 card">
+                          <div className="d-flex justify-content-start">
+                            {message.message}
+                          </div>
+                          <div className="time d-flex justify-content-end align-items-center">
+                            {message.time}
+                            {message.gelesen === true ? (
+                              <DoneAll className="ms-2" style={{ fontSize: "16px" }} />
+                            ) : (
+                              <Check className="ms-2" style={{ fontSize: "16px" }} />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="row px-3">
+                        <div className="incoming_message col-8 card">
+                          <div className="d-flex justify-content-start">
+                            {message.message}
+                          </div>
+                          <div className="time d-flex justify-content-end align-items-center">
+                            {message.time}
+                          </div>
+                        </div>
+                        <div className="col-4"></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className='d-flex justify-content-center align-items-center h_100 mx-5 px-5 fs-5'>
+              <div className="d-flex justify-content-center align-items-center h_100 mx-5 px-5 fs-5">
                 {"Welcome to the chat empire of Fußraumspinne! 🕸️ Here, privacy is... well, optional. Every message? Visible. Every edit? At my fingertips. Every delete? Just a click away. I am the Ultimate Overlord of this very legit platform, and if you dare challenge my reign… prepare for the banishment of a lifetime. But hey, no worries—feel free to enjoy my totally secure and not-at-all sketchy website. 😉"}
               </div>
             )}
           </div>
 
           {user ? (
-            <form className='row mt-auto'>
+            <form onSubmit={handleSubmit} className='row mt-auto'>
               <div className='col-11 pe-0'>
-                <InputField classname={"w_100 border_0"} placeholder={"Type Message here..."} onchange={(e) => setSearchTerm(e.target.value)} type={"text"} />
+                <InputField classname={"w_100 border_0"} placeholder={"Type Message here..."} onchange={(e) => setMessage(e.target.value)} type={"text"} />
               </div>
               <div className='col-1 p-0'>
                 <Button classname={"d-flex justify-content-center btn-primary w_100 border_0"} text={<Send className="fs-4 text_white" />} />
