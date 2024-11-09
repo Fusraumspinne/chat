@@ -3,17 +3,25 @@
 import Button from "@/components/Button";
 import InputField from "@/components/InputField";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 function SignUp() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (session) {
+            router.push("/dashboard");
+        }
+    }, [session, router]);
+
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
 
     const [error, setError] = useState("")
-
-    const router = useRouter()
 
     const handleSubmit = async (e) => {
         e.preventDefault()
