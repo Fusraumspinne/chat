@@ -1,8 +1,11 @@
 import React from 'react'
 
-function InputField({placeholder, onchange}) {
+function InputField({placeholder, onchange, type, classname, label}) {
   return (
-    <input type="text" placeholder={placeholder} onChange={onchange}/>
+    <div>
+      <div>{label}</div>
+      <input className={classname + " form-control"} placeholder={placeholder} onChange={onchange} type={type}/>
+    </div>
   )
 }
 

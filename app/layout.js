@@ -1,5 +1,6 @@
 import { AuthProvider } from "@/app/provider"
 import "./globals.css";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 export const metadata = {
   title: "Chat-App",
