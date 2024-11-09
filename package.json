@@ -9,6 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
     "bcryptjs": "^2.4.3",
     "bootstrap": "^5.3.3",
     "mongoose": "^8.8.0",

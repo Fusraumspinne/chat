@@ -51,7 +51,7 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="d-flex flex-column container_form">
           {error ? (
             <div
-              className="fw-bold mb-2 p-2 text-light border_radius border border-1 border-danger"
+              className="fw-bold mb-2 p-2 text_white border_radius border border-1 border-danger"
               style={{ backgroundColor: "rgba(220, 53, 69, 0.75)" }}
             >
               {error}
@@ -63,7 +63,7 @@ export default function Home() {
           <InputField classname={"w_100 mb-2"} placeholder={"peter@gmail.com"} onchange={(e) => setEmail(e.target.value)} type={"text"} label={"E-Mail"} />
           <InputField classname={"w_100 mb-2"} placeholder={"1234"} onchange={(e) => setPassword(e.target.value)} type={"password"} label={"Password"}/>
 
-          <Button text={"Login"} />
+          <Button text={"Login"} classname={"btn-primary"}/>
 
           <Link href={"/signup"} className="text-decoration-none text-dark mt-1 mb-3">
             Don&apos;t have an account?{" "}

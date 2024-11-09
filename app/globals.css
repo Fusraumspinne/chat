@@ -23,3 +23,15 @@ body {
 .h_100{
   height: 100%;
 }
+
+.text_white{
+  color: white;
+}
+
+.side_bar{
+  width: 50px;
+}
+
+.top_bar{
+  height: 50px;
+}
