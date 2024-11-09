@@ -14,6 +14,7 @@ function Dashboard() {
   const [users, setUsers] = useState([])
   const [user, setUser] = useState(null)
   const [messages, setMessages] = useState([])
+  const [latestMessages, setLatestMessages] = useState([])
   const [send, setSend] = useState()
   const [recieve, setRecieve] = useState()
   const [message, setMessage] = useState()
@@ -35,6 +36,10 @@ function Dashboard() {
 
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    fetchLatestMessages()
+  }, [session]);
 
   const fetchUsers = async () => {
     try {
@@ -89,6 +94,35 @@ function Dashboard() {
     }
   }
 
+  const fetchLatestMessages = async () => {
+    if (session?.user?.email == null) {
+      return
+    }
+
+    try {
+      const res = await fetch("/api/getLatestMessage", {
+        method: "POST",
+        body: JSON.stringify({
+          email: session?.user?.email
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log(data.messages);
+        setLatestMessages(data.messages)
+      } else {
+        console.error("Error occurred while fetching latest messages: ", data.message);
+      }
+    } catch (error) {
+      console.error("Error occurred while fetching latest messages: ", error);
+    }
+  };
+
   useEffect(() => {
     const currentTimeInGermany = new Date().toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
     setTime(currentTimeInGermany);
@@ -138,9 +172,53 @@ function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchMessages(); 
+      fetchMessages();
     }
   }, [user]);
+
+  useEffect(() => {
+    const updateUnreadMessages = async () => {
+      if (!session?.user?.email) return;
+
+      const unreadMessages = messages.filter(message =>
+        message.recieve === session?.user?.email && !message.gelesen
+      );
+
+      if (unreadMessages.length === 0) {
+        return;
+      }
+
+      const updatedMessages = unreadMessages.map(message => ({
+        ...message,
+        gelesen: true
+      }));
+
+      setMessages(prevMessages => prevMessages.map(msg =>
+        updatedMessages.find(updatedMsg => updatedMsg._id === msg._id) || msg
+      ));
+
+      try {
+        const response = await fetch("/api/updateMessage", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedMessages.map(({ _id, gelesen }) => ({ _id, gelesen }))),
+        });
+
+        if (response.ok) {
+          console.log("Nachrichten erfolgreich aktualisiert");
+        } else {
+          console.error("Fehler beim Aktualisieren der Nachrichten:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Fehler beim Aktualisieren der Nachrichten:", error);
+      }
+    };
+
+    updateUnreadMessages()
+  }, [messages]);
+
 
   return (
     <div className='d-flex flex-column vh-100 bg-primary'>
@@ -161,6 +239,23 @@ function Dashboard() {
                 if (user.email === session?.user?.email) {
                   return null;
                 }
+
+                const latestMessage = latestMessages.find(
+                  (message) => message.send === user.email || message.recieve === user.email
+                );
+
+                let latestMessageText = latestMessage ? latestMessage.message : "No messages";
+
+                if (latestMessage && latestMessage.send === session?.user?.email) {
+                  latestMessageText = `You: ${latestMessageText}`;
+                }
+
+                let newMessage = false;
+                
+                if (latestMessage && !latestMessage.gelesen && latestMessage.recieve === session?.user?.email) {
+                  newMessage = true;
+                }
+
                 return (
                   <div key={user._id} onClick={() => selectUser(user)}>
                     <div className="d-flex align-items-center justify-content-between">
@@ -168,11 +263,17 @@ function Dashboard() {
                         <Image className="profile_image mx-3" src={user.profileImage} alt="icon" width={40} height={40} />
                         <div className="d-flex flex-column">
                           <div className="fw-semibold">{user.name}</div>
-                          <div className="text-muted">You: Leck Eier</div>
+                          <div className="text-muted">{latestMessageText}</div>
                         </div>
                       </div>
+                      
+                      {newMessage ? (
+                        <MarkEmailUnreadOutlined className="me-3 fs-3" />
+                      ) : (
+                        <div>
 
-                      <MarkEmailUnreadOutlined className="me-3 fs-3" />
+                        </div>
+                      )}
                     </div>
                     <hr className='my-2' />
                   </div>
@@ -197,9 +298,9 @@ function Dashboard() {
             {user ? (
               <div>
                 {messages.map((message) => (
-                  <div key={message._id} className='my-1 mx-3'>
+                  <div key={message._id} className='my-1'>
                     {message.send === session?.user?.email ? (
-                      <div className="row px-3">
+                      <div className="row px-3 me-2">
                         <div className="col-4"></div>
                         <div className="outgoing_message col-8 card">
                           <div className="d-flex justify-content-start">
@@ -216,7 +317,7 @@ function Dashboard() {
                         </div>
                       </div>
                     ) : (
-                      <div className="row px-3">
+                      <div className="row px-2 ms-1">
                         <div className="incoming_message col-8 card">
                           <div className="d-flex justify-content-start">
                             {message.message}
