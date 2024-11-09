@@ -39,3 +39,11 @@ body {
 .profile_image{
   border-radius: 50%;
 }
+
+.border_o{
+  border-radius: 0.375rem 0.375rem 0 0 !important;
+}
+
+.border_0{
+  border-radius: 0 !important;
+}
