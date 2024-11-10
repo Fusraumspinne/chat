@@ -24,10 +24,6 @@ function Dashboard() {
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
   }, [])
 
   useEffect(() => {
@@ -232,53 +228,54 @@ function Dashboard() {
               <Button classname={"d-flex justify-content-center"} text={<Settings className="fs-3 text_white" />} />
               <Button classname={"d-flex justify-content-center"} text={<Logout className="fs-3 text_white" />} onclick={() => signOut()} />
             </div>
-            <div className='bg-light h_100 w_100' style={{ borderRadius: "0.375rem 0.375rem 0 0" }}>
-              <InputField classname={"w_100 mb-2 border_o"} placeholder={"Type Name here..."} onchange={(e) => setSearchTerm(e.target.value)} type={"text"} />
+            <div className='w_100 h_100'>
+              <InputField classname={"w_100 mb-2"} placeholder={"Type Name here..."} onchange={(e) => setSearchTerm(e.target.value)} type={"text"} />
+              <div className='bg-light h_100 custom_overflow' style={{ borderRadius: "0.375rem 0.375rem 0 0" }}>
+                {users.filter(filterUsers).map((user) => {
+                  if (user.email === session?.user?.email) {
+                    return null;
+                  }
 
-              {users.filter(filterUsers).map((user) => {
-                if (user.email === session?.user?.email) {
-                  return null;
-                }
+                  const latestMessage = latestMessages.find(
+                    (message) => message.send === user.email || message.recieve === user.email
+                  );
 
-                const latestMessage = latestMessages.find(
-                  (message) => message.send === user.email || message.recieve === user.email
-                );
+                  let latestMessageText = latestMessage ? latestMessage.message : "No messages";
 
-                let latestMessageText = latestMessage ? latestMessage.message : "No messages";
+                  if (latestMessage && latestMessage.send === session?.user?.email) {
+                    latestMessageText = `You: ${latestMessageText}`;
+                  }
 
-                if (latestMessage && latestMessage.send === session?.user?.email) {
-                  latestMessageText = `You: ${latestMessageText}`;
-                }
+                  let newMessage = false;
 
-                let newMessage = false;
-                
-                if (latestMessage && !latestMessage.gelesen && latestMessage.recieve === session?.user?.email) {
-                  newMessage = true;
-                }
+                  if (latestMessage && !latestMessage.gelesen && latestMessage.recieve === session?.user?.email) {
+                    newMessage = true;
+                  }
 
-                return (
-                  <div key={user._id} onClick={() => selectUser(user)}>
-                    <div className="d-flex align-items-center justify-content-between">
-                      <div className="d-flex">
-                        <Image className="profile_image mx-3" src={user.profileImage} alt="icon" width={40} height={40} />
-                        <div className="d-flex flex-column">
-                          <div className="fw-semibold">{user.name}</div>
-                          <div className="text-muted">{latestMessageText}</div>
+                  return (
+                    <div key={user._id} onClick={() => selectUser(user)} className='mt-2'>
+                      <div className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex">
+                          <Image className="profile_image mx-3" src={user.profileImage} alt="icon" width={40} height={40} />
+                          <div className="d-flex flex-column">
+                            <div className="fw-semibold">{user.name}</div>
+                            <div className="text-muted">{latestMessageText}</div>
+                          </div>
                         </div>
+
+                        {newMessage ? (
+                          <MarkEmailUnreadOutlined className="me-3 fs-3" />
+                        ) : (
+                          <div>
+
+                          </div>
+                        )}
                       </div>
-                      
-                      {newMessage ? (
-                        <MarkEmailUnreadOutlined className="me-3 fs-3" />
-                      ) : (
-                        <div>
-
-                        </div>
-                      )}
+                      <hr className='my-1' />
                     </div>
-                    <hr className='my-2' />
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>

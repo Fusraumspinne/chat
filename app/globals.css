@@ -55,3 +55,7 @@ body {
 .incoming_message{
   border-radius: 0.375rem 0.375rem 0.375rem 0 !important;
 }
+
+.custom_overflow{
+  overflow-y: auto;
+}
