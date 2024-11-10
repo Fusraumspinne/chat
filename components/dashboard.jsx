@@ -223,7 +223,7 @@ function Dashboard() {
   return (
     <div className='d-flex flex-column vh-100 bg-primary'>
       <div className='top_bar text_white d-flex align-items-center ms-2 fs-3 fw-semibold'>
-        Connectify
+        Flopper Chat
       </div>
       <div className='row h_100'>
         <div className='col-4 h_100'>
