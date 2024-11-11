@@ -96,10 +96,10 @@ function Dashboard() {
       const intervalMessages = setInterval(() => {
         fetchMessages();
       }, 5000);
-  
+
       return () => clearInterval(intervalMessages);
     }
-  }, [user]);  
+  }, [user]);
 
   useEffect(() => {
     const intervalUser = setInterval(() => {
@@ -168,7 +168,8 @@ function Dashboard() {
       });
 
       if (resSendMessage.ok) {
-        console.log("Message Sent");
+        const form = e.target
+        form.reset()
       } else {
         console.log("Sending Message failed");
       }
@@ -178,6 +179,7 @@ function Dashboard() {
 
     fetchMessages();
     setMessage("");
+    setImg("")
   };
 
   const convertToBase64 = (e) => {
@@ -276,6 +278,10 @@ function Dashboard() {
                   if (latestMessage && latestMessage.send === session?.user?.email) {
                     latestMessageText = `You: ${latestMessageText}`;
                   }
+
+                  if (latestMessageText.length > 30) {
+                    latestMessageText = latestMessageText.slice(0, 27) + "...";
+                  }                  
 
                   let newMessage = false;
 
@@ -379,7 +385,7 @@ function Dashboard() {
                 <input onChange={convertToBase64} className={"d-flex justify-content-center btn-primary w_100 border_0 form-control"} placeholder={<UploadFile className="fs-4 text_white" />} type="file" accept="image/*" />
               </div>
               <div className='col-8 p-0'>
-                <InputField classname={"w_100 border_0"} placeholder={"Type Message here..."} onchange={(e) => setMessage(e.target.value)} type={"text"} value={message} />
+                <InputField classname={"w_100 border_0"} placeholder={"Type Message here..."} onchange={(e) => setMessage(e.target.value)} type={"text"} />
               </div>
               <div className='col-1 p-0'>
                 <Button classname={"d-flex justify-content-center btn-primary w_100 border_0"} text={<Send className="fs-4 text_white icon_center" />} />
