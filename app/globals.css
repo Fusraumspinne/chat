@@ -58,4 +58,18 @@ body {
 
 .custom_overflow{
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.dashboard-container {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.h_95{
+  height: 95%;
+}
+
+.icon_center{
+  margin-right: 20%;
 }

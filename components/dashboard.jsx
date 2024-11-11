@@ -4,7 +4,7 @@ import Button from '@/components/ui/Button'
 import React, { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { useSession } from 'next-auth/react'
-import { Logout, Settings, MarkEmailUnreadOutlined, Send, Check, DoneAll } from "@mui/icons-material"
+import { Logout, Settings, MarkEmailUnreadOutlined, Send, Check, DoneAll, UploadFile } from "@mui/icons-material"
 import InputField from './ui/InputField'
 import Image from 'next/image'
 
@@ -13,14 +13,16 @@ function Dashboard() {
 
   const [users, setUsers] = useState([])
   const [user, setUser] = useState(null)
+  const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([])
   const [latestMessages, setLatestMessages] = useState([])
-  const [send, setSend] = useState()
-  const [recieve, setRecieve] = useState()
-  const [message, setMessage] = useState()
-  const [time, setTime] = useState()
+  const [send, setSend] = useState("")
+  const [recieve, setRecieve] = useState("")
+  const [message, setMessage] = useState("")
+  const [time, setTime] = useState("")
   const [gelesen, setGelesen] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
+  const [img, setImg] = useState("");
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -45,7 +47,6 @@ function Dashboard() {
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
-        console.log(data.users)
       } else {
         console.error("Error occurred while fetching users: ", response.statusText);
       }
@@ -78,10 +79,10 @@ function Dashboard() {
           'Content-Type': 'application/json',
         },
       });
+
       if (resGetMessages.ok) {
         const data = await resGetMessages.json()
         setMessages(data.messages)
-        console.log(data.messages)
       } else {
         console.error("Error occurred while fetching messages:", resGetMessages.statusText)
       }
@@ -90,13 +91,32 @@ function Dashboard() {
     }
   }
 
+  useEffect(() => {
+    if (user) {
+      const intervalMessages = setInterval(() => {
+        fetchMessages();
+      }, 5000);
+  
+      return () => clearInterval(intervalMessages);
+    }
+  }, [user]);  
+
+  useEffect(() => {
+    const intervalUser = setInterval(() => {
+      fetchLatestMessages()
+      fetchUsers()
+    }, 30000);
+
+    return () => clearInterval(intervalUser);
+  }, [session]);
+
   const fetchLatestMessages = async () => {
     if (session?.user?.email == null) {
       return
     }
 
     try {
-      const res = await fetch("/api/getLatestMessage", {
+      const resGetLastMessage = await fetch("/api/getLatestMessage", {
         method: "POST",
         body: JSON.stringify({
           email: session?.user?.email
@@ -106,13 +126,11 @@ function Dashboard() {
         }
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        console.log(data.messages);
+      if (resGetLastMessage.ok) {
+        const data = await resGetLastMessage.json();
         setLatestMessages(data.messages)
       } else {
-        console.error("Error occurred while fetching latest messages: ", data.message);
+        console.log("Error occurred while fetching latest messages");
       }
     } catch (error) {
       console.error("Error occurred while fetching latest messages: ", error);
@@ -128,11 +146,11 @@ function Dashboard() {
   }, [message]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!send || !recieve || !message || !time) {
-      console.log("All Inputs are requird.")
-      return
+      console.log("All Inputs are required.");
+      return;
     }
 
     try {
@@ -144,27 +162,41 @@ function Dashboard() {
           recieve,
           message,
           time,
-          gelesen
+          gelesen,
+          img
         })
-      })
+      });
 
       if (resSendMessage.ok) {
-        console.log("Message Send")
+        console.log("Message Sent");
       } else {
-        console.log("Sending Message failed")
+        console.log("Sending Message failed");
       }
     } catch (error) {
-      console.log("Error during sending Message: ", error)
+      console.log("Error during sending Message: ", error);
     }
 
-    fetchMessages()
-    setMessage("")
+    fetchMessages();
+    setMessage("");
+  };
+
+  const convertToBase64 = (e) => {
+    let reader = new FileReader()
+    reader.readAsDataURL(e.target.files[0])
+    reader.onload = () => {
+      setImg(reader.result)
+      console.log(reader.result)
+    }
+    reader.onerror = error => {
+      console.log("Error: " + error)
+    }
   }
 
   const selectUser = (newUser) => {
-    setMessages([])
-    setUser(newUser)
-  }
+    setMessages([]);
+    setUser(newUser);
+    setSelectedUser(newUser);
+  };
 
   useEffect(() => {
     if (user) {
@@ -215,13 +247,12 @@ function Dashboard() {
     updateUnreadMessages()
   }, [messages]);
 
-
   return (
     <div className='d-flex flex-column vh-100 bg-primary'>
       <div className='top_bar text_white d-flex align-items-center ms-2 fs-3 fw-semibold'>
         Flopper Chat
       </div>
-      <div className='row h_100'>
+      <div className='row h_95'>
         <div className='col-4 h_100'>
           <div className='h_100 d-flex'>
             <div className='d-flex flex-column justify-content-end align-items-end side_bar h_100'>
@@ -253,7 +284,7 @@ function Dashboard() {
                   }
 
                   return (
-                    <div key={user._id} onClick={() => selectUser(user)} className='mt-2'>
+                    <div key={user._id} onClick={() => selectUser(user)} className={`pt-2 ${selectedUser && user.email === selectedUser.email ? 'bg-primary' : ''}`}>
                       <div className="d-flex align-items-center justify-content-between">
                         <div className="d-flex">
                           <Image className="profile_image mx-3" src={user.profileImage} alt="icon" width={40} height={40} />
@@ -271,7 +302,7 @@ function Dashboard() {
                           </div>
                         )}
                       </div>
-                      <hr className='my-1' />
+                      <hr className='m-0' />
                     </div>
                   );
                 })}
@@ -291,19 +322,22 @@ function Dashboard() {
             </div>
           )}
           <hr className='m-0' />
-          <div className="flex-grow-1">
+          <div className="flex-grow-1 custom_overflow h_100">
             {user ? (
               <div>
                 {messages.map((message) => (
-                  <div key={message._id} className='my-1'>
+                  <div key={message._id} className="my-1">
                     {message.send === session?.user?.email ? (
-                      <div className="row px-3 me-2">
+                      <div className="row px-2 me-1">
                         <div className="col-4"></div>
                         <div className="outgoing_message col-8 card">
                           <div className="d-flex justify-content-start">
                             {message.message}
                           </div>
-                          <div className="time d-flex justify-content-end align-items-center">
+                          {message.img && (
+                            <Image src={message.img} alt="Uploaded" width={200} height={200} className='border_radius' />
+                          )}
+                          <div className="d-flex justify-content-end align-items-center text-muted">
                             {message.time}
                             {message.gelesen === true ? (
                               <DoneAll className="ms-2" style={{ fontSize: "16px" }} />
@@ -319,6 +353,9 @@ function Dashboard() {
                           <div className="d-flex justify-content-start">
                             {message.message}
                           </div>
+                          {message.img && (
+                            <Image src={message.img} alt="Uploaded" width={200} height={200} className='border_radius' />
+                          )}
                           <div className="time d-flex justify-content-end align-items-center">
                             {message.time}
                           </div>
@@ -337,12 +374,15 @@ function Dashboard() {
           </div>
 
           {user ? (
-            <form onSubmit={handleSubmit} className='row mt-auto'>
-              <div className='col-11 pe-0'>
-                <InputField classname={"w_100 border_0"} placeholder={"Type Message here..."} onchange={(e) => setMessage(e.target.value)} type={"text"} />
+            <form onSubmit={handleSubmit} className='row'>
+              <div className='col-3 pe-0'>
+                <input onChange={convertToBase64} className={"d-flex justify-content-center btn-primary w_100 border_0 form-control"} placeholder={<UploadFile className="fs-4 text_white" />} type="file" accept="image/*" />
+              </div>
+              <div className='col-8 p-0'>
+                <InputField classname={"w_100 border_0"} placeholder={"Type Message here..."} onchange={(e) => setMessage(e.target.value)} type={"text"} value={message} />
               </div>
               <div className='col-1 p-0'>
-                <Button classname={"d-flex justify-content-center btn-primary w_100 border_0"} text={<Send className="fs-4 text_white" />} />
+                <Button classname={"d-flex justify-content-center btn-primary w_100 border_0"} text={<Send className="fs-4 text_white icon_center" />} />
               </div>
             </form>
           ) : (

@@ -14,13 +14,17 @@ const messageSchema = new Schema(
             type: String,
             required: true,
         },
-        time : {
+        time: {
             type: String,
-            required: true
-        }, 
+            required: true,
+        },
         gelesen: {
             type: Boolean,
-            required: true
+            required: true,
+        },
+        img: {
+            type: String,
+            required: false,
         }
     },
     { timestamps: true }

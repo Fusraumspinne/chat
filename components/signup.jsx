@@ -71,8 +71,6 @@ function SignUp() {
     const getBase64Size = (base64Str) => {
         return Math.round((base64Str.length * 3) / 4);  
     };
-    
-    
 
     const handleSubmit = async (e) => {
         e.preventDefault()
